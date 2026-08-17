@@ -1,0 +1,15 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug",
+      "type": "coreclr",
+      "request": "launch",
+      "program": "${workspaceFolder}/bin/Debug/net10.0-windows/CallsignLookup.exe",
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "preLaunchTask": "build"
+    }
+  ]
+}

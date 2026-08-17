@@ -1,13 +1,11 @@
 using System.Diagnostics;
+using MAES.Core;
 
 namespace CallsignLookup;
 
 public class MainWindow : Form
 {
-    readonly ToolStrip toolStrip = new ()
-    {
-        GripStyle = ToolStripGripStyle.Hidden
-    };
+    Postavke postavke = AppData.Load<Postavke>("postavke.json");
 
     readonly ToolStripButton loadButton = new ()
     {
@@ -18,6 +16,11 @@ public class MainWindow : Form
     {
         Text = "Validiraj",
         Enabled = false
+    };
+
+    readonly ToolStripButton settingsButton = new ()
+    {
+        Text = "Postavke"
     };
 
     readonly DataGridView grid = new ()
@@ -41,10 +44,18 @@ public class MainWindow : Form
     {
         loadButton.Click += ucitajLog;
         validateButton.Click += validate;
+        settingsButton.Click += OpenSettings;
         grid.RowPrePaint += gridRowPrePaint;
+
+        ToolStrip toolStrip = new ()
+        {
+            GripStyle = ToolStripGripStyle.Hidden
+        };
 
         toolStrip.Items.Add(loadButton);
         toolStrip.Items.Add(validateButton);
+        toolStrip.Items.Add(new ToolStripSeparator());
+        toolStrip.Items.Add(settingsButton);
         
         statusStrip.Items.Add(ukupnoVezaLabel);
         
@@ -131,21 +142,10 @@ public class MainWindow : Form
         {
             ukupnoVezaLabel.Text = $"[{i+1}/{veze.Count}] Provjeravam {veze[i].PozivniZnak}";
 
-            if(await veze[i].SearchQRZ(client)) veze[i].Validirao = "qrz.com";
-            else if(await veze[i].SearchHamQTH(client)) veze[i].Validirao = "hamqth.com";
-            else if(await veze[i].SearchCallook(client)) veze[i].Validirao = "callook.info";
-            // if(veze[i].Continent == "NA")
-            // {
-            //     if(await veze[i].SearchCallook(client)) veze[i].Validirao = "callook.info";
-            //     else if(await veze[i].SearchQRZ(client)) veze[i].Validirao = "qrz.com";
-            //     else if(await veze[i].SearchHamQTH(client)) veze[i].Validirao = "hamqth.com";
-            // }
-            // else
-            // {
-            //     if(await veze[i].SearchQRZ(client)) veze[i].Validirao = "qrz.com";
-            //     else if(await veze[i].SearchHamQTH(client)) veze[i].Validirao = "hamqth.com";
-            //     else if(await veze[i].SearchCallook(client)) veze[i].Validirao = "callook.info";
-            // }
+            if(postavke.QRZ && await veze[i].SearchQRZ(client, postavke.QRZUsername, postavke.QRZPassword)) veze[i].Validirao = "qrz.com";
+            else if(postavke.HamQTH && await veze[i].SearchHamQTH(client, postavke.HamQTHUsername, postavke.HamQTHPassword)) veze[i].Validirao = "hamqth.com";
+            else if(postavke.QRZCQ && await veze[i].SearchQRZCQ(client, postavke.QRZCQUsername, postavke.QRZCQPassword)) veze[i].Validirao = "qrzcq.com";
+            else if(postavke.Callook && await veze[i].SearchCallook(client)) veze[i].Validirao = "callook.info";
 
             veze[i].Checked = true;
         }
@@ -173,5 +173,11 @@ public class MainWindow : Form
             grid.Rows[e.RowIndex].DefaultCellStyle.BackColor = Color.White;
             grid.Rows[e.RowIndex].DefaultCellStyle.ForeColor = Color.Black;
         }
+    }
+
+    void OpenSettings(object? sender, EventArgs e)
+    {
+        using var settingsForm = new SettingsWindow(postavke);
+        settingsForm.ShowDialog(this);
     }
 }
